@@ -61,7 +61,7 @@ export function Login({ onLogin }) {
             <div className="w-full max-w-md z-10 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 <div className="text-center">
                     <div className="inline-block p-4 bg-card rounded-3xl shadow-premium mb-8 border border-text/5">
-                        <img src={logo} alt="Infinity Gym" className="h-14 w-auto dark:mix-blend-screen" />
+                        <img src={logo} alt="Infinity Gym" className="h-14 w-auto" />
                     </div>
                     <h1 className="text-4xl font-black tracking-tight text-text mb-2 font-sans">
                         INFINITY <span className="text-accent">GYM</span>
