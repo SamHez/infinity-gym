@@ -151,6 +151,7 @@ function App() {
                 <Route path="/expiry" element={user.role === 'manager' ? <ExpiryMonitoring /> : <Navigate to="/dashboard" />} />
                 <Route path="/trainers" element={user.role === 'manager' ? <TrainersSchedules /> : <Navigate to="/dashboard" />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </main>
             <BottomNav activeTab={activeTab} onTabChange={(tab) => navigate(`/${tab}`)} user={user} />
