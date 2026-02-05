@@ -6,8 +6,8 @@ export function Card({ children, className, title, subtitle }) {
         <div className={cn("glass-card p-6 md:p-8 rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-2 duration-500", className)}>
             {(title || subtitle) && (
                 <div className="mb-8">
-                    {subtitle && <p className="text-accent text-[9px] font-black uppercase tracking-[0.3em] mb-1 leading-none">{subtitle}</p>}
-                    {title && <h3 className="text-text font-black text-2xl tracking-tighter uppercase ">{title}</h3>}
+                    {subtitle && <p className="text-accent text-[9px] font-bold uppercase tracking-[0.3em] mb-1 leading-none">{subtitle}</p>}
+                    {title && <h3 className="text-text font-bold text-xl md:text-2xl tracking-tighter uppercase ">{title}</h3>}
                 </div>
             )}
             {children}
@@ -24,7 +24,7 @@ export function StatCard({ label, value, trend, icon: Icon, colorClass = "text-t
                 </div>
                 {trend && (
                     <span className={cn(
-                        "text-[10px] font-black px-3 py-1 rounded-xl shadow-sm",
+                        "text-[10px] font-bold px-3 py-1 rounded-xl shadow-sm",
                         trend > 0 ? "bg-success/10 text-success" : "bg-error/10 text-error"
                     )}>
                         {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
@@ -32,8 +32,8 @@ export function StatCard({ label, value, trend, icon: Icon, colorClass = "text-t
                 )}
             </div>
             <div>
-                <p className="text-text/30 text-[9px] font-black uppercase tracking-[0.2em] mb-1">{label}</p>
-                <p className={cn("text-4xl font-black tracking-tighter ", colorClass)}>{value}</p>
+                <p className="text-text/30 text-[9px] font-bold uppercase tracking-[0.2em] mb-1">{label}</p>
+                <p className={cn("text-4xl font-bold tracking-tighter ", colorClass)}>{value}</p>
             </div>
         </Card>
     );

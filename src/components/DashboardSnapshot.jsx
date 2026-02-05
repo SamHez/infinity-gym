@@ -22,12 +22,12 @@ export function DashboardSnapshot() {
             {/* Intelligence Header */}
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-accent text-[10px] font-black uppercase tracking-[0.4em] mb-1 leading-none">Operational Intelligence</h2>
-                    <p className="text-text text-3xl font-black tracking-tighter leading-none uppercase">Infinity Hotel Gym</p>
+                    <h2 className="text-accent text-[10px] font-bold uppercase tracking-[0.4em] mb-1 leading-none">Operational Intelligence</h2>
+                    <p className="text-text text-2xl md:text-3xl font-bold tracking-tighter leading-none uppercase">Infinity Hotel Gym</p>
                 </div>
                 <div className="flex items-center gap-4 bg-card px-6 py-4 rounded-3xl border border-text/5 shadow-premium">
                     <div className="w-3 h-3 bg-success rounded-full animate-pulse shadow-[0_0_15px_rgba(46,204,113,0.5)]" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-text">Syncing Live</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-text">Syncing Live</span>
                 </div>
             </div>
 
@@ -54,11 +54,11 @@ export function DashboardSnapshot() {
                                         )}
                                         style={{ height: `${(item.revenue / maxRev) * 100}%` }}
                                     >
-                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-text text-surface dark:bg-accent dark:text-surface text-[9px] font-black px-2 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-premium whitespace-nowrap z-20">
+                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-text text-surface dark:bg-accent dark:text-surface text-[9px] font-bold px-2 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-premium whitespace-nowrap z-20">
                                             {Math.round(item.revenue)}k
                                         </div>
                                     </div>
-                                    <span className="text-[9px] font-black text-text/30 uppercase">
+                                    <span className="text-[9px] font-bold text-text/30 uppercase">
                                         {item.month}
                                     </span>
                                 </div>
@@ -74,8 +74,8 @@ export function DashboardSnapshot() {
                             <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="440" strokeDashoffset="110" className="text-accent" />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-4xl font-black  tracking-tighter leading-none">75%</span>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-text/20 mt-1">Capacity</span>
+                            <span className="text-4xl font-bold  tracking-tighter leading-none">75%</span>
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-text/20 mt-1">Capacity</span>
                         </div>
                     </div>
                     <p className="text-center text-text/40 text-xs font-medium leading-relaxed">
@@ -94,8 +94,8 @@ export function DashboardSnapshot() {
                         <Smartphone size={32} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h4 className="text-text font-black text-xl mb-1 tracking-tight">Mobile Settlements</h4>
-                        <p className="text-text font-black text-4xl tracking-tighter ">{(financeStats.mobileRevenue || 0).toLocaleString()} <span className="text-accent text-xs not- tracking-widest ml-1">RWF</span></p>
+                        <h4 className="text-text font-bold text-xl mb-1 tracking-tight">Mobile Settlements</h4>
+                        <p className="text-text font-bold text-4xl tracking-tighter ">{(financeStats.mobileRevenue || 0).toLocaleString()} <span className="text-accent text-xs not- tracking-widest ml-1">RWF</span></p>
                     </div>
                 </Card>
                 <Card className="flex items-center gap-8 p-10 group overflow-hidden relative">
@@ -106,8 +106,8 @@ export function DashboardSnapshot() {
                         <Wallet size={32} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h4 className="text-text font-black text-xl mb-1 tracking-tight">Front Office Cash</h4>
-                        <p className="text-text font-black text-4xl tracking-tighter ">{(financeStats.cashRevenue || 0).toLocaleString()} <span className="text-primary text-xs not- tracking-widest ml-1">RWF</span></p>
+                        <h4 className="text-text font-bold text-xl mb-1 tracking-tight">Front Office Cash</h4>
+                        <p className="text-text font-bold text-4xl tracking-tighter ">{(financeStats.cashRevenue || 0).toLocaleString()} <span className="text-primary text-xs not- tracking-widest ml-1">RWF</span></p>
                     </div>
                 </Card>
             </div>

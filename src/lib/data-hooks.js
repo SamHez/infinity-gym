@@ -29,18 +29,22 @@ export function useMembers() {
 
 export function useAttendance() {
     const [todayCount, setTodayCount] = useState(0);
+    const [checkedInIds, setCheckedInIds] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function fetchAttendance() {
             setLoading(true);
             const today = new Date().toISOString().split('T')[0];
-            const { count, error } = await supabase
+            const { data, error } = await supabase
                 .from('attendance')
-                .select('*', { count: 'exact', head: true })
+                .select('member_id')
                 .eq('attendance_date', today);
 
-            if (count !== null) setTodayCount(count);
+            if (data) {
+                setCheckedInIds(data.map(a => a.member_id));
+                setTodayCount(data.length);
+            }
             setLoading(false);
         }
         fetchAttendance();
@@ -54,12 +58,29 @@ export function useAttendance() {
 
         if (!error) {
             setTodayCount(prev => prev + 1);
+            setCheckedInIds(prev => [...prev, memberId]);
             return true;
         }
         return false;
     };
 
-    return { todayCount, checkIn, loading };
+    const removeCheckIn = async (memberId) => {
+        const today = new Date().toISOString().split('T')[0];
+        const { error } = await supabase
+            .from('attendance')
+            .delete()
+            .eq('member_id', memberId)
+            .eq('attendance_date', today);
+
+        if (!error) {
+            setTodayCount(prev => Math.max(0, prev - 1));
+            setCheckedInIds(prev => prev.filter(id => id !== memberId));
+            return true;
+        }
+        return false;
+    };
+
+    return { todayCount, checkedInIds, checkIn, removeCheckIn, loading };
 }
 
 export function useFinance() {
