@@ -6,7 +6,7 @@ import {
     CreditCard,
     Activity,
     LogOut,
-    Bell,
+    User,
     ChevronRight,
     Sun,
     Moon
@@ -26,8 +26,8 @@ export function Sidebar({ activeTab, user, onLogout }) {
         { id: 'members', icon: Users, label: 'Members', path: '/members', role: 'both' },
         { id: 'attendance', icon: UserCheck, label: 'Attendance', path: '/attendance', role: 'both' },
         { id: 'finance', icon: CreditCard, label: 'Finance', path: '/finance', role: 'both' },
-        { id: 'trainers', icon: Activity, label: 'Trainers', path: '/trainers', role: 'manager' },
-        { id: 'expiry', icon: Bell, label: 'Expiry', path: '/expiry', role: 'manager' },
+        // { id: 'trainers', icon: Activity, label: 'Trainers', path: '/trainers', role: 'manager' },
+        // { id: 'expiry', icon: Bell, label: 'Expiry', path: '/expiry', role: 'manager' },
     ];
 
     const filteredTabs = allTabs.filter(tab =>
@@ -104,11 +104,12 @@ export function Sidebar({ activeTab, user, onLogout }) {
     );
 }
 
-export function MobileHeader() {
+export function MobileHeader({ user, onLogout }) {
     const { theme, toggleTheme } = useTheme();
+    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
     return (
-        <header className="fixed lg:hidden top-0 left-0 right-0 h-24 bg-surface/80 backdrop-blur-2xl border-b border-text/5 z-40 px-6 flex justify-between items-center transition-all">
+        <header className="fixed lg:hidden top-0 left-0 right-0 h-24 bg-surface/80 backdrop-blur-2xl border-b border-text/5 z-[60] px-6 flex justify-between items-center transition-all">
             <div className="flex items-center gap-3">
                 <img src={logo} alt="Infinity Gym" className="h-8 w-auto" />
                 <div className="h-5 w-[2px] bg-text/5" />
@@ -122,10 +123,40 @@ export function MobileHeader() {
                 >
                     {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
                 </button>
-                <button className="relative p-3 bg-card border border-text/5 rounded-2xl shadow-premium text-text/40">
-                    <Bell size={18} />
-                    <span className="absolute top-3 right-3 w-2 h-2 bg-accent rounded-full border-2 border-card" />
-                </button>
+                <div className="relative">
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className={cn(
+                            "relative p-3 bg-card border border-text/5 rounded-2xl shadow-premium transition-all",
+                            isMenuOpen ? "text-accent border-accent/20" : "text-text/40"
+                        )}
+                    >
+                        <User size={18} />
+                    </button>
+
+                    {isMenuOpen && (
+                        <>
+                            <div className="fixed inset-0 z-[-1]" onClick={() => setIsMenuOpen(false)} />
+                            <div className="absolute top-16 right-0 w-64 bg-card border border-text/5 rounded-[2rem] shadow-premium p-6 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-sm">
+                                        {user?.email?.[0].toUpperCase()}
+                                    </div>
+                                    <div className="overflow-hidden">
+                                        <p className="text-text font-bold text-xs tracking-tight truncate uppercase">{user?.role === 'manager' ? 'Admin Manager' : 'Front Desk'}</p>
+                                        <p className="text-text/30 text-[9px] font-bold uppercase tracking-tighter truncate">{user?.email}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={onLogout}
+                                    className="w-full flex items-center justify-center gap-3 py-4 bg-error/5 text-error border border-error/10 hover:bg-error hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                                >
+                                    <LogOut size={14} /> Sign Out
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
         </header>
     );

@@ -17,37 +17,33 @@ export function MemberList({ onAddMember }) {
     return (
         <div className="space-y-10">
             {/* Directory Header */}
-            <div className="flex justify-between items-center bg-card p-10 rounded-[3rem] border border-text/5 shadow-premium relative overflow-hidden">
+            <div className="flex justify-between items-center bg-card p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-text/5 shadow-premium relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-[80px]" />
                 <div>
-                    <h2 className="text-accent text-[10px] font-bold uppercase tracking-[0.4em] mb-1 leading-none ">Asset Database</h2>
-                    <p className="text-text text-3xl md:text-5xl font-bold tracking-tighter leading-none uppercase">DIRECTORY</p>
+                    <h2 className="text-accent text-[9px] md:text-[10px] font-bold uppercase tracking-[0.4em] mb-1 leading-none ">Asset Database</h2>
+                    <p className="text-text text-2xl md:text-5xl font-bold tracking-tighter leading-none uppercase">DIRECTORY</p>
                 </div>
 
-                {/* Only Receptionist adds members based on prompt, but usually both can. Prompt says Receptionist add members. */}
                 <button
                     onClick={onAddMember}
-                    className="flex items-center gap-4 px-8 py-5 bg-primary text-white rounded-3xl shadow-premium hover:scale-105 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest z-10"
+                    className="flex items-center gap-0 md:gap-4 p-4 md:px-8 md:py-5 bg-primary text-white rounded-2xl md:rounded-3xl shadow-premium hover:scale-105 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest z-10"
                 >
-                    <Plus size={20} strokeWidth={3} />
-                    New Enrollment
+                    <Plus size={20} strokeWidth={3} className="md:mr-0" />
+                    <span className="hidden md:inline">New Enrollment</span>
                 </button>
             </div>
 
             {/* Tactical Search Interface */}
             <Card className="p-2 border border-text/5 shadow-premium group">
                 <div className="relative">
-                    <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-text/20 group-focus-within:text-accent transition-colors" size={26} strokeWidth={2.5} />
+                    <Search className="absolute left-6 md:left-8 top-1/2 -translate-y-1/2 text-text/20 group-focus-within:text-accent transition-colors w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} />
                     <input
                         type="text"
-                        placeholder="Search by profile name or identity code..."
-                        className="w-full bg-surface/50 border-none rounded-[2rem] py-7 pl-20 pr-8 text-text font-bold text-lg md:text-xl focus:ring-4 focus:ring-accent/10 placeholder:text-text/10 transition-all font-sans"
+                        placeholder="SEARCH MEMBERS..."
+                        className="w-full bg-surface/50 border-none rounded-[1.5rem] md:rounded-[2rem] py-5 md:py-7 pl-14 md:pl-20 pr-6 md:pr-8 text-text font-bold text-sm md:text-xl focus:ring-4 focus:ring-accent/10 placeholder:text-text/10 transition-all font-sans uppercase tracking-widest"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                     />
-                    <button className="absolute right-6 top-1/2 -translate-y-1/2 p-4 bg-text/[0.03] hover:bg-accent/10 hover:text-accent rounded-2xl text-text/20 transition-all">
-                        <Filter size={24} />
-                    </button>
                 </div>
             </Card>
 

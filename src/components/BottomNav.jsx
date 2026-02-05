@@ -10,7 +10,7 @@ export function BottomNav({ user }) {
         { id: 'members', icon: Users, label: 'Members', path: '/members', role: 'both' },
         { id: 'attendance', icon: UserCheck, label: 'Check-in', path: '/attendance', role: 'both' },
         { id: 'finance', icon: CreditCard, label: 'Finance', path: '/finance', role: 'both' },
-        { id: 'trainers', icon: Activity, label: 'Elite', path: '/trainers', role: 'manager' },
+        // { id: 'trainers', icon: Activity, label: 'Elite', path: '/trainers', role: 'manager' },
     ];
 
     const filteredTabs = tabs.filter(tab =>
