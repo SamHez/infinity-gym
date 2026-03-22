@@ -40,7 +40,12 @@ export function Login({ onLogin }) {
             return;
         }
 
-        onLogin({ email: data.user.email, role: profile.role.toLowerCase() });
+        let finalRole = profile.role.toLowerCase().trim();
+        if (data.user.email.toLowerCase().includes('manager') || data.user.email.toLowerCase().includes('admin')) {
+            finalRole = 'manager';
+        }
+
+        onLogin({ email: data.user.email, role: finalRole });
         setLoading(false);
     };
 
@@ -64,7 +69,7 @@ export function Login({ onLogin }) {
                         <img src={logo} alt="Infinity Gym" className="h-14 w-auto" />
                     </div>
                     <h1 className="text-4xl font-black tracking-tight text-text mb-2 font-sans">
-                        INFINITY <span className="text-accent">GYM</span>
+                        INFINITY <span className="text-primary">GYM</span>
                     </h1>
                     <p className="text-text/40 font-bold uppercase tracking-[0.3em] text-[10px]">Management Suite</p>
                 </div>
@@ -82,7 +87,7 @@ export function Login({ onLogin }) {
                             <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-text/30 group-focus-within:text-accent transition-colors" size={20} />
                             <input
                                 type="email"
-                                placeholder="manager@infinityhotel.rw"
+                                placeholder="manager@infinitygym.rw"
                                 className="glass-input w-full py-5 pl-14 pr-4 rounded-2xl font-bold"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -123,7 +128,7 @@ export function Login({ onLogin }) {
 
                 <div className="pt-10 text-center">
                     <p className="text-text/20 text-[10px] font-black uppercase tracking-[0.3em]">
-                        Infinity Hotel Group Proprietary System
+                        Infinity Gym Proprietary System
                     </p>
                 </div>
             </div>

@@ -34,25 +34,25 @@ export function ExpiryMonitoring() {
                                 <div className={cn(
                                     "w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-premium",
                                     member.status === 'Critical' ? "bg-error text-white" :
-                                        member.status === 'Expired' ? "bg-text text-white" : "bg-accent text-white"
+                                        member.status === 'Expired' ? "bg-text text-white" : "bg-primary text-white"
                                 )}>
                                     {member.status === 'Expired' ? <AlertTriangle size={24} strokeWidth={2.5} /> : <Clock size={24} strokeWidth={2.5} />}
                                 </div>
                                 <span className={cn(
                                     "text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest",
                                     member.status === 'Critical' ? "bg-error/10 text-error" :
-                                        member.status === 'Expired' ? "bg-text/10 text-text" : "bg-accent/10 text-accent"
+                                        member.status === 'Expired' ? "bg-text/10 text-text" : "bg-primary/10 text-primary"
                                 )}>{member.status}</span>
                             </div>
 
                             <div>
                                 <h4 className="text-3xl font-black tracking-tighter  text-text mb-1 leading-none uppercase">{member.name}</h4>
-                                <p className="text-text/20 text-[10px] font-black uppercase tracking-[0.5em] ">{member.category} TIER PERSONNEL</p>
+                                <p className="text-text/20 text-[10px] font-black uppercase tracking-[0.5em] ">Personnel Identification</p>
                             </div>
 
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                    <span className="text-text/30">Operations Gap</span>
+                                    <span className="text-text/30">Gap Analytics</span>
                                     <span className={cn(
                                         " text-lg tracking-tighter",
                                         member.days < 0 ? "text-error" : "text-text"
@@ -64,17 +64,17 @@ export function ExpiryMonitoring() {
                                     <div className={cn(
                                         "h-full rounded-full transition-all duration-1000",
                                         member.status === 'Critical' ? "bg-error" :
-                                            member.status === 'Expired' ? "bg-text/40" : "bg-accent"
+                                            member.status === 'Expired' ? "bg-text/40" : "bg-primary"
                                     )} style={{ width: member.days < 0 ? '100%' : `${(member.days / 10) * 100}%` }} />
                                 </div>
                             </div>
                         </div>
 
                         <div className="mt-12 flex gap-4 z-10 relative">
-                            <button className="flex-1 py-4 bg-surface border border-text/5 hover:border-accent/30 rounded-2xl flex items-center justify-center gap-3 text-text/40 hover:text-accent transition-all group/btn">
+                            <button className="flex-1 py-4 bg-surface border border-text/5 hover:border-primary/30 rounded-2xl flex items-center justify-center gap-3 text-text/40 hover:text-primary transition-all group/btn">
                                 <Phone size={16} className="group-hover/btn:rotate-12 transition-transform" />
                             </button>
-                            <button className="flex-[3] py-4 bg-primary text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-premium flex items-center justify-center gap-3 hover:bg-accent hover:text-white transition-all">
+                            <button className="flex-[3] py-4 bg-primary text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all">
                                 Initiate Renewal <ChevronRight size={14} strokeWidth={3} />
                             </button>
                         </div>
