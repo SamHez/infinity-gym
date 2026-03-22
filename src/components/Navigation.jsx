@@ -26,6 +26,9 @@ import { cn } from '../lib/utils';
 
 import { NavLink } from 'react-router-dom';
 import { useMembers, useAttendance } from '../lib/data-hooks';
+import { useToast } from '../context/ToastContext';
+import { ReportService } from '../lib/ReportService';
+import { ReportConfigModal } from './ReportConfigModal';
 
 function getTabsForUser(user) {
     const isManager = user?.role === 'manager' || user?.role === 'admin';
@@ -119,6 +122,7 @@ export function Sidebar({ activeTab, user, onLogout, isCollapsed, onToggleCollap
 
 export function TopNav({ user, onLogout, isSidebarCollapsed, activeTab, onNavigate }) {
     const { theme, toggleTheme } = useTheme();
+    const { showToast } = useToast();
 
     const isFrontDesk = user?.role !== 'manager' && user?.role !== 'admin';
     const isOnDashboard = activeTab === 'dashboard';
@@ -131,6 +135,10 @@ export function TopNav({ user, onLogout, isSidebarCollapsed, activeTab, onNaviga
     // Quick Actions dropdown state
     const [actionsOpen, setActionsOpen] = React.useState(false);
     const actionsRef = React.useRef(null);
+
+    // Report config modal state
+    const [reportModalOpen, setReportModalOpen] = React.useState(false);
+    const [reportType, setReportType] = React.useState('PDF');
 
     const { members: searchResults, loading: searchLoading } = useMembers({
         search,
@@ -146,6 +154,31 @@ export function TopNav({ user, onLogout, isSidebarCollapsed, activeTab, onNaviga
         if (success) { setSearch(''); await refreshAttendance(); }
     };
 
+    const handleReportAction = (type) => {
+        setReportType(type);
+        setReportModalOpen(true);
+        setActionsOpen(false);
+    };
+
+    const executeReportGeneration = async (type, scope, email) => {
+        try {
+            if (type === 'PDF') {
+                await ReportService.generatePDF(scope);
+                showToast('PDF Report generated successfully!', 'success');
+            } else if (type === 'Excel') {
+                await ReportService.generateExcel(scope);
+                showToast('Excel Report generated successfully!', 'success');
+            } else if (type === 'Email') {
+                await ReportService.sendViaEmailJS(scope, email);
+                showToast('Report emailed successfully!', 'success');
+            }
+        } catch (error) {
+            console.error("Report Error:", error);
+            showToast('Failed to generate report: ' + error.message, 'error');
+            throw error;
+        }
+    };
+
     // Close dropdowns on outside click
     React.useEffect(() => {
         const handler = (e) => {
@@ -157,154 +190,163 @@ export function TopNav({ user, onLogout, isSidebarCollapsed, activeTab, onNaviga
     }, []);
 
     return (
-        <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-text/5 px-6 py-3 flex items-center gap-4 transition-all">
-            {/* Logo — only when sidebar is collapsed */}
-            {isSidebarCollapsed && (
-                <img src={logo} alt="Infinity Gym" className="h-10 w-auto flex-shrink-0" />
-            )}
+        <>
+            <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-text/5 px-6 py-3 flex items-center gap-4 transition-all">
+                {/* Logo — only when sidebar is collapsed */}
+                {isSidebarCollapsed && (
+                    <img src={logo} alt="Infinity Gym" className="h-10 w-auto flex-shrink-0" />
+                )}
 
-            {/* Wide Search Bar */}
-            <div ref={searchRef} className="flex-1 max-w-xl relative">
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text/30 group-focus-within:text-accent transition-colors" size={15} />
-                        <input
-                            type="text"
-                            placeholder="Search members by name or phone..."
-                            className="w-full bg-text/[0.04] border border-text/10 rounded-2xl py-2.5 pl-10 pr-4 text-[11px] font-bold uppercase tracking-widest focus:outline-none focus:border-accent/40 focus:bg-card transition-all"
-                            value={search}
-                            onChange={(e) => { setSearch(e.target.value); setSearchOpen(true); }}
-                            onFocus={() => setSearchOpen(true)}
-                        />
-                    </div>
-                    {/* Search dropdown */}
-                    {searchOpen && search.trim() !== '' && (
-                        <div className="absolute top-full mt-2 left-0 right-0 bg-card border border-text/5 rounded-2xl shadow-xl overflow-hidden z-50 divide-y divide-text/5">
-                            {searchLoading ? (
-                                <div className="p-4 text-center text-text/30 text-[10px] font-bold uppercase tracking-widest">Searching...</div>
-                            ) : searchResults.length === 0 ? (
-                                <div className="p-4 text-center text-text/20 text-[10px] font-bold uppercase tracking-widest">No members found</div>
-                            ) : searchResults.map(member => (
-                                <div key={member.id} className="flex items-center justify-between px-4 py-3 hover:bg-surface transition-colors">
-                                    <div>
-                                        <p className="text-text font-bold text-xs uppercase">{member.full_name}</p>
-                                        <p className="text-text/30 text-[9px] font-bold uppercase tracking-wide">{member.category}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className={cn(
-                                            "text-[8px] font-bold px-2 py-0.5 rounded-md uppercase",
-                                            member.status === 'Active' ? "bg-success/10 text-success" :
-                                                member.status === 'Expiring Soon' ? "bg-accent/10 text-accent" : "bg-error/10 text-error"
-                                        )}>{member.status}</span>
-                                        {member.status !== 'Expired' && (
-                                            <button
-                                                onClick={() => handleCheckIn(member.id)}
-                                                className={cn(
-                                                    "p-1.5 rounded-lg transition-colors",
-                                                    checkedInIds.includes(member.id)
-                                                        ? "bg-success text-white hover:bg-error"
-                                                        : "bg-primary text-white hover:bg-accent"
-                                                )}
-                                                title={checkedInIds.includes(member.id) ? "Undo Check-in" : "Check In"}
-                                            >
-                                                <CheckCircle2 size={11} strokeWidth={3} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                {/* Wide Search Bar */}
+                <div ref={searchRef} className="flex-1 max-w-xl relative">
+                        <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text/30 group-focus-within:text-accent transition-colors" size={15} />
+                            <input
+                                type="text"
+                                placeholder="Search members by name or phone..."
+                                className="w-full bg-text/[0.04] border border-text/10 rounded-2xl py-2.5 pl-10 pr-4 text-[11px] font-bold uppercase tracking-widest focus:outline-none focus:border-accent/40 focus:bg-card transition-all"
+                                value={search}
+                                onChange={(e) => { setSearch(e.target.value); setSearchOpen(true); }}
+                                onFocus={() => setSearchOpen(true)}
+                            />
                         </div>
-                    )}
-                </div>
-
-            {/* Quick Actions dropdown — all pages */}
-            {onNavigate && (
-                <div ref={actionsRef} className="relative flex-shrink-0">
-                    <button
-                        onClick={() => setActionsOpen(!actionsOpen)}
-                        className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 whitespace-nowrap"
-                    >
-                        <Plus size={13} strokeWidth={3} />
-                        Quick Actions
-                        <ChevronRight size={11} className={cn("transition-transform", actionsOpen ? "rotate-90" : "rotate-0")} />
-                    </button>
-                    {actionsOpen && (
-                        <div className="absolute top-full right-0 mt-2 w-56 bg-card border border-text/5 rounded-2xl shadow-xl overflow-visible z-50 divide-y divide-text/5">
-                            <button
-                                onClick={() => { onNavigate('attendance'); setActionsOpen(false); }}
-                                className="w-full flex items-center gap-3 px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all"
-                            >
-                                <UserCheck size={14} strokeWidth={2.5} className="text-primary" /> Check-in
-                            </button>
-                            <button
-                                onClick={() => { onNavigate('members', 'register'); setActionsOpen(false); }}
-                                className="w-full flex items-center gap-3 px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all"
-                            >
-                                <UserPlus size={14} strokeWidth={2.5} className="text-success" /> New Member
-                            </button>
-                            <button
-                                onClick={() => { onNavigate('expenses'); setActionsOpen(false); }}
-                                className="w-full flex items-center gap-3 px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all"
-                            >
-                                <Receipt size={14} strokeWidth={2.5} className="text-accent" /> Log Expense
-                            </button>
-                            <button
-                                onClick={() => { onNavigate('finance', 'custom_income'); setActionsOpen(false); }}
-                                className="w-full flex items-center gap-3 px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all"
-                            >
-                                <Plus size={14} strokeWidth={3} className="text-success" /> Log Income
-                            </button>
-
-                            {/* Nested Generate Report Menu */}
-                            <div className="relative group/report">
-                                <button className="w-full flex items-center justify-between px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all">
-                                    <div className="flex items-center gap-3">
-                                        <TrendingUp size={14} strokeWidth={2.5} className="text-primary" /> Generate Report
+                        {/* Search dropdown */}
+                        {searchOpen && search.trim() !== '' && (
+                            <div className="absolute top-full mt-2 left-0 right-0 bg-card border border-text/5 rounded-2xl shadow-xl overflow-hidden z-50 divide-y divide-text/5">
+                                {searchLoading ? (
+                                    <div className="p-4 text-center text-text/30 text-[10px] font-bold uppercase tracking-widest">Searching...</div>
+                                ) : searchResults.length === 0 ? (
+                                    <div className="p-4 text-center text-text/20 text-[10px] font-bold uppercase tracking-widest">No members found</div>
+                                ) : searchResults.map(member => (
+                                    <div key={member.id} className="flex items-center justify-between px-4 py-3 hover:bg-surface transition-colors">
+                                        <div>
+                                            <p className="text-text font-bold text-xs uppercase">{member.full_name}</p>
+                                            <p className="text-text/30 text-[9px] font-bold uppercase tracking-wide">{member.category}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={cn(
+                                                "text-[8px] font-bold px-2 py-0.5 rounded-md uppercase",
+                                                member.status === 'Active' ? "bg-success/10 text-success" :
+                                                    member.status === 'Expiring Soon' ? "bg-accent/10 text-accent" : "bg-error/10 text-error"
+                                            )}>{member.status}</span>
+                                            {member.status !== 'Expired' && (
+                                                <button
+                                                    onClick={() => handleCheckIn(member.id)}
+                                                    className={cn(
+                                                        "p-1.5 rounded-lg transition-colors",
+                                                        checkedInIds.includes(member.id)
+                                                            ? "bg-success text-white hover:bg-error"
+                                                            : "bg-primary text-white hover:bg-accent"
+                                                    )}
+                                                    title={checkedInIds.includes(member.id) ? "Undo Check-in" : "Check In"}
+                                                >
+                                                    <CheckCircle2 size={11} strokeWidth={3} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                    <ChevronRight size={12} className="opacity-50 group-hover/report:opacity-100 transition-opacity" />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                {/* Quick Actions dropdown — all pages */}
+                {onNavigate && (
+                    <div ref={actionsRef} className="relative flex-shrink-0">
+                        <button
+                            onClick={() => setActionsOpen(!actionsOpen)}
+                            className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 whitespace-nowrap"
+                        >
+                            <Plus size={13} strokeWidth={3} />
+                            Quick Actions
+                            <ChevronRight size={11} className={cn("transition-transform", actionsOpen ? "rotate-90" : "rotate-0")} />
+                        </button>
+                        {actionsOpen && (
+                            <div className="absolute top-full right-0 mt-2 w-56 bg-card border border-text/5 rounded-2xl shadow-xl overflow-visible z-50 divide-y divide-text/5">
+                                <button
+                                    onClick={() => { onNavigate('attendance'); setActionsOpen(false); }}
+                                    className="w-full flex items-center gap-3 px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all"
+                                >
+                                    <UserCheck size={14} strokeWidth={2.5} className="text-primary" /> Check-in
                                 </button>
-                                {/* Submenu */}
-                                <div className="absolute right-[calc(100%+0.5rem)] top-0 w-48 bg-card border border-text/5 rounded-2xl shadow-xl overflow-hidden invisible opacity-0 translate-x-2 group-hover/report:visible group-hover/report:opacity-100 group-hover/report:translate-x-0 transition-all divide-y divide-text/5">
-                                    <button onClick={() => { console.log('PDF'); setActionsOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all">
-                                        <FileText size={13} strokeWidth={2.5} className="text-error" /> PDF Report
+                                <button
+                                    onClick={() => { onNavigate('members', 'register'); setActionsOpen(false); }}
+                                    className="w-full flex items-center gap-3 px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all"
+                                >
+                                    <UserPlus size={14} strokeWidth={2.5} className="text-success" /> New Member
+                                </button>
+                                <button
+                                    onClick={() => { onNavigate('expenses'); setActionsOpen(false); }}
+                                    className="w-full flex items-center gap-3 px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all"
+                                >
+                                    <Receipt size={14} strokeWidth={2.5} className="text-accent" /> Log Expense
+                                </button>
+                                <button
+                                    onClick={() => { onNavigate('finance', 'custom_income'); setActionsOpen(false); }}
+                                    className="w-full flex items-center gap-3 px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all"
+                                >
+                                    <Plus size={14} strokeWidth={3} className="text-success" /> Log Income
+                                </button>
+
+                                {/* Nested Generate Report Menu */}
+                                <div className="relative group/report">
+                                    <button className="w-full flex items-center justify-between px-5 py-3.5 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <TrendingUp size={14} strokeWidth={2.5} className="text-primary" /> Generate Report
+                                        </div>
+                                        <ChevronRight size={12} className="opacity-50 group-hover/report:opacity-100 transition-opacity" />
                                     </button>
-                                    <button onClick={() => { console.log('Excel'); setActionsOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all">
-                                        <Download size={13} strokeWidth={2.5} className="text-success" /> Excel Report
-                                    </button>
-                                    <button onClick={() => { console.log('Email'); setActionsOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all">
-                                        <Mail size={13} strokeWidth={2.5} className="text-accent" /> Send to Email
-                                    </button>
+                                    {/* Submenu */}
+                                    <div className="absolute right-[calc(100%+0.5rem)] top-0 w-48 bg-card border border-text/5 rounded-2xl shadow-xl overflow-hidden invisible opacity-0 translate-x-2 group-hover/report:visible group-hover/report:opacity-100 group-hover/report:translate-x-0 transition-all divide-y divide-text/5">
+                                        <button onClick={() => handleReportAction('PDF')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all">
+                                            <FileText size={13} strokeWidth={2.5} className="text-error" /> PDF Report
+                                        </button>
+                                        <button onClick={() => handleReportAction('Excel')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all">
+                                            <Download size={13} strokeWidth={2.5} className="text-success" /> Excel Report
+                                        </button>
+                                        <button onClick={() => handleReportAction('Email')} className="w-full flex items-center gap-3 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-text/70 hover:text-text hover:bg-surface transition-all">
+                                            <Mail size={13} strokeWidth={2.5} className="text-accent" /> Send to Email
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Theme + Profile — always far right */}
-            <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
-                <button
-                    onClick={toggleTheme}
-                    className="p-2.5 bg-card border border-text/5 rounded-xl shadow-premium text-text/40 hover:text-primary transition-all"
-                >
-                    {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
-                </button>
-                <div className="flex items-center gap-2 bg-card pl-3 pr-2 py-1.5 rounded-full border border-text/5 shadow-premium">
-                    <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs">
-                        {user?.email?.[0].toUpperCase()}
+                        )}
                     </div>
-                    <p className="hidden md:block text-text font-bold text-xs tracking-tight px-1">
-                        {(user?.role === 'manager' || user?.role === 'admin') ? 'Manager' : 'Front Desk'}
-                    </p>
+                )}
+
+                {/* Theme + Profile — always far right */}
+                <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
                     <button
-                        onClick={onLogout}
-                        className="p-1.5 bg-error/5 text-error hover:bg-error hover:text-white rounded-full transition-all"
-                        title="Sign Out"
+                        onClick={toggleTheme}
+                        className="p-2.5 bg-card border border-text/5 rounded-xl shadow-premium text-text/40 hover:text-primary transition-all"
                     >
-                        <LogOut size={14} />
+                        {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
                     </button>
+                    <div className="flex items-center gap-2 bg-card pl-3 pr-2 py-1.5 rounded-full border border-text/5 shadow-premium">
+                        <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs">
+                            {user?.email?.[0].toUpperCase()}
+                        </div>
+                        <p className="hidden md:block text-text font-bold text-xs tracking-tight px-1">
+                            {(user?.role === 'manager' || user?.role === 'admin') ? 'Manager' : 'Front Desk'}
+                        </p>
+                        <button
+                            onClick={onLogout}
+                            className="p-1.5 bg-error/5 text-error hover:bg-error hover:text-white rounded-full transition-all"
+                            title="Sign Out"
+                        >
+                            <LogOut size={14} />
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </header>
+            </header>
+
+            <ReportConfigModal
+                isOpen={reportModalOpen}
+                onClose={() => setReportModalOpen(false)}
+                type={reportType}
+                onGenerate={executeReportGeneration}
+            />
+        </>
     );
 }
 

@@ -44,7 +44,7 @@ export const ReportService = {
         // Fetch Members (Joined in range or globally active? Usually reports show new signups)
         const { data: newMembers } = await supabase
             .from('members')
-            .select('first_name, last_name, plan_type, status, created_at')
+            .select('full_name, category, status, created_at')
             .gte('created_at', start)
             .lte('created_at', end)
             .order('created_at', { ascending: false });
@@ -54,7 +54,7 @@ export const ReportService = {
             .from('attendance')
             .select(`
                 check_in_time, status,
-                member:members (first_name, last_name)
+                member:members (full_name)
             `)
             .gte('check_in_time', start)
             .lte('check_in_time', end)
@@ -136,8 +136,8 @@ export const ReportService = {
             
             const memberBody = data.newMembers.map(m => [
                 new Date(m.created_at).toLocaleDateString(),
-                `${m.first_name} ${m.last_name}`,
-                m.plan_type,
+                m.full_name,
+                m.category,
                 m.status
             ]);
             autoTable(doc, {
@@ -177,8 +177,8 @@ export const ReportService = {
         // Members Sheet
         const membersData = (data.newMembers || []).map(m => ({
             Joined: new Date(m.created_at).toLocaleDateString(),
-            Name: `${m.first_name} ${m.last_name}`,
-            Plan: m.plan_type,
+            Name: m.full_name,
+            Category: m.category,
             Status: m.status
         }));
         
@@ -186,7 +186,7 @@ export const ReportService = {
         const attendanceData = (data.attendance || []).map(a => ({
             Date: new Date(a.check_in_time).toLocaleDateString(),
             Time: new Date(a.check_in_time).toLocaleTimeString(),
-            Member: a.member ? `${a.member.first_name} ${a.member.last_name}` : 'Unknown',
+            Member: a.member ? a.member.full_name : 'Unknown',
             Status: a.status
         }));
 
