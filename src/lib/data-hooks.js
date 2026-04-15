@@ -221,15 +221,15 @@ export function useMembers(options = {}) {
             const now = new Date();
             const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-            
+
             const weekAgoStr = weekAgo.toISOString();
             const twoWeeksAgoStr = twoWeeksAgo.toISOString();
 
             const newThisWeekCount = data.filter(m => m.created_at >= weekAgoStr).length;
             const newLastWeekCount = data.filter(m => m.created_at >= twoWeeksAgoStr && m.created_at < weekAgoStr).length;
-            
-            const growthPercentage = newLastWeekCount > 0 
-                ? Math.round(((newThisWeekCount - newLastWeekCount) / newLastWeekCount) * 100) 
+
+            const growthPercentage = newLastWeekCount > 0
+                ? Math.round(((newThisWeekCount - newLastWeekCount) / newLastWeekCount) * 100)
                 : (newThisWeekCount > 0 ? 100 : 0);
 
             const expiringSoonCount = data.filter(m => m.status === 'Expiring Soon').length;
@@ -260,15 +260,49 @@ export function useMembers(options = {}) {
 
     const deleteMember = async (id) => {
         try {
-            console.log(`[useMembers] Attempting to delete member: ${id}`);
-            const { error } = await supabase
+            console.log(`[useMembers] Initiating robust delete for member: ${id}`);
+            
+            // 1. Delete dependent Attendance records
+            const { error: attendanceError, count: attCount } = await supabase
+                .from('attendance')
+                .delete({ count: 'exact' })
+                .eq('member_id', id);
+            
+            if (attendanceError) {
+                console.warn("[useMembers] Attendance deletion error:", attendanceError);
+            } else {
+                console.log(`[useMembers] Deleted ${attCount || 0} attendance records.`);
+            }
+
+            // 2. Delete dependent Payment records
+            const { error: paymentsError, count: payCount } = await supabase
+                .from('payments')
+                .delete({ count: 'exact' })
+                .eq('member_id', id);
+            
+            if (paymentsError) {
+                console.warn("[useMembers] Payments deletion error:", paymentsError);
+            } else {
+                console.log(`[useMembers] Deleted ${payCount || 0} payment records.`);
+            }
+
+            // 3. Delete the Member record with verification
+            const { data: deletedData, error, count: memberCount } = await supabase
                 .from('members')
-                .delete()
-                .eq('id', id);
+                .delete({ count: 'exact' })
+                .eq('id', id)
+                .select();
 
             if (error) throw error;
+            
+            if (!deletedData || deletedData.length === 0) {
+                console.error("[useMembers] Deletion failed: No rows affected. Check RLS policies or if record exists.");
+                throw new Error("Deletion blocked by system policies or record not found.");
+            }
 
-            showToast("Member record permanently deleted", "success");
+            console.log(`[useMembers] Successfully deleted member record from database.`);
+            showToast("Member and all related records deleted", "success");
+            
             setMembers(prev => prev.filter(m => m.id !== id));
             decrementMemberCaches(id);
             fetchMembers({ force: true }); // Sync with server count/etc
@@ -279,6 +313,7 @@ export function useMembers(options = {}) {
             return false;
         }
     };
+
 
     return {
         members,

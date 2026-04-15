@@ -22,6 +22,7 @@ export function MembershipRegistration({ onComplete, onCancel }) {
     const categories = [
         { name: 'Normal Membership', price: 30000, desc: 'Comprehensive Gym Access' },
         { name: 'Group Membership', price: 20000, desc: 'Corporate / Linked Tier' },
+        { name: 'Student (alu/cmu etc)', price: 20000, desc: 'Academic Discount Tier' },
         { name: 'Daily Pass', price: 3000, desc: 'Single Entry' },
     ];
 
@@ -225,20 +226,22 @@ export function MembershipRegistration({ onComplete, onCancel }) {
                             <div className="space-y-6">
                                 <label className="text-[10px] font-bold text-text/30 uppercase tracking-[0.4em] ml-2 block">Commitment Window</label>
                                 <div className="flex flex-wrap gap-4">
-                                    {durations.map(d => (
-                                        <button
-                                            key={d.name}
-                                            onClick={() => setFormData({ ...formData, duration: d.name })}
-                                            className={cn(
-                                                "px-8 py-4 rounded-2xl text-[10px] font-bold transition-all uppercase tracking-[0.2em]",
-                                                formData.duration === d.name
-                                                    ? "bg-primary text-white shadow-premium"
-                                                    : "bg-surface border-2 border-text/5 text-text/30 hover:text-text/60"
-                                            )}
-                                        >
-                                            {d.name} {d.discount > 0 && <span className="ml-2 text-[9px] text-accent">-{d.discount}%</span>}
-                                        </button>
-                                    ))}
+                                    {durations
+                                        .filter(d => formData.category !== 'Student (alu/cmu etc)' || d.name !== 'Weekly')
+                                        .map(d => (
+                                            <button
+                                                key={d.name}
+                                                onClick={() => setFormData({ ...formData, duration: d.name })}
+                                                className={cn(
+                                                    "px-8 py-4 rounded-2xl text-[10px] font-bold transition-all uppercase tracking-[0.2em]",
+                                                    formData.duration === d.name
+                                                        ? "bg-primary text-white shadow-premium"
+                                                        : "bg-surface border-2 border-text/5 text-text/30 hover:text-text/60"
+                                                )}
+                                            >
+                                                {d.name} {d.discount > 0 && <span className="ml-2 text-[9px] text-accent">-{d.discount}%</span>}
+                                            </button>
+                                        ))}
                                 </div>
                             </div>
                         )}

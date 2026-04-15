@@ -28,19 +28,21 @@ export function Login({ onLogin }) {
         }
 
         // Fetch user profile for role
-        const { data: profile, error: profileError } = await supabase
+        const { data: profiles, error: profileError } = await supabase
             .from('profiles')
             .select('role')
-            .eq('id', data.user.id)
-            .single();
+            .eq('id', data.user.id);
 
-        if (profileError) {
-            setError("Profile not found. Please contact admin.");
+        const profile = profiles?.[0];
+
+        if (profileError || !profile) {
+            setError("Profile record not found. Please contact an administrator.");
             setLoading(false);
             return;
         }
 
         let finalRole = profile.role.toLowerCase().trim();
+
         if (data.user.email.toLowerCase().includes('manager') || data.user.email.toLowerCase().includes('admin')) {
             finalRole = 'manager';
         }

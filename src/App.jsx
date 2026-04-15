@@ -56,13 +56,14 @@ function App() {
   }, []);
 
   const fetchProfile = async (authUser) => {
-    const { data: profile } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', authUser.id)
-      .single();
+      .eq('id', authUser.id);
 
+    const profile = data?.[0];
     let finalRole = profile?.role?.toLowerCase()?.trim() || 'receptionist';
+
     if (authUser.email.toLowerCase().includes('manager') || authUser.email.toLowerCase().includes('admin')) {
       finalRole = 'manager';
     }
