@@ -94,6 +94,7 @@ function App() {
           if (formData.duration === 'Weekly') expiryDate.setDate(expiryDate.getDate() + 7);
           else if (formData.duration === 'Monthly') expiryDate.setMonth(expiryDate.getMonth() + 1);
           else if (formData.duration === '3 Months') expiryDate.setMonth(expiryDate.getMonth() + 3);
+          else if (formData.duration === '6 Months') expiryDate.setMonth(expiryDate.getMonth() + 6);
           else if (formData.duration === 'Annual') expiryDate.setFullYear(expiryDate.getFullYear() + 1);
       }
 
@@ -156,6 +157,7 @@ function App() {
             if (formData.duration === 'Weekly') expiryDate.setDate(expiryDate.getDate() + 7);
             else if (formData.duration === 'Monthly') expiryDate.setMonth(expiryDate.getMonth() + 1);
             else if (formData.duration === '3 Months') expiryDate.setMonth(expiryDate.getMonth() + 3);
+            else if (formData.duration === '6 Months') expiryDate.setMonth(expiryDate.getMonth() + 6);
             else if (formData.duration === 'Annual') expiryDate.setFullYear(expiryDate.getFullYear() + 1);
         }
       }

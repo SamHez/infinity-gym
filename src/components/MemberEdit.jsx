@@ -23,17 +23,18 @@ export function MemberEdit({ member, onComplete, onCancel }) {
     const fileInputRef = useRef(null);
 
     const categories = [
-        { name: 'Normal Membership', price: 30000, desc: 'Comprehensive Gym Access' },
-        { name: 'Group Membership', price: 20000, desc: 'Corporate / Linked Tier' },
+        { name: 'Normal Membership', price: 50000, desc: 'Comprehensive Gym Access' },
+        { name: 'Group Membership', price: 300000, desc: 'Group of 10 Monthly Membership' },
         { name: 'Student (alu/cmu etc)', price: 20000, desc: 'Academic Discount Tier' },
-        { name: 'Daily Pass', price: 3000, desc: 'Single Entry' },
+        { name: 'Daily Pass', price: 4000, desc: 'Single Entry' },
     ];
 
     const durations = [
         { name: 'Weekly', discount: 0 },
         { name: 'Monthly', discount: 0 },
-        { name: '3 Months', discount: 10 },
-        { name: 'Annual', discount: 20 },
+        { name: '3 Months', discount: 0 },
+        { name: '6 Months', discount: 0 },
+        { name: 'Annual', discount: 0 },
     ];
 
     const branches = [
@@ -46,11 +47,16 @@ export function MemberEdit({ member, onComplete, onCancel }) {
         const base = categories.find(c => c.name === formData.category)?.price || 0;
         
         let price = base;
-        if (formData.category !== 'Daily Pass') {
-            const duration = durations.find(d => d.name === formData.duration);
-            if (formData.duration === 'Weekly') price = Math.round(base / 4);
-            else if (formData.duration === '3 Months') price = (base * 3) * (1 - duration.discount / 100);
-            else if (formData.duration === 'Annual') price = (base * 12) * (1 - duration.discount / 100);
+        if (formData.category === 'Normal Membership') {
+            if (formData.duration === '3 Months') price = 120000;
+            else if (formData.duration === '6 Months') price = 220000;
+            else if (formData.duration === 'Annual') price = 300000;
+        } else if (formData.category === 'Student (alu/cmu etc)') {
+            if (formData.duration === '3 Months') price = 60000;
+            else if (formData.duration === '6 Months') price = 120000;
+            else if (formData.duration === 'Annual') price = 240000;
+        } else if (formData.category === 'Group Membership') {
+            price = 300000; // Strictly monthly
         }
 
         return price;
@@ -64,6 +70,7 @@ export function MemberEdit({ member, onComplete, onCancel }) {
             if (formData.duration === 'Weekly') expiry.setDate(expiry.getDate() + 7);
             else if (formData.duration === 'Monthly') expiry.setMonth(expiry.getMonth() + 1);
             else if (formData.duration === '3 Months') expiry.setMonth(expiry.getMonth() + 3);
+            else if (formData.duration === '6 Months') expiry.setMonth(expiry.getMonth() + 6);
             else if (formData.duration === 'Annual') expiry.setFullYear(expiry.getFullYear() + 1);
         }
         return expiry.toISOString().split('T')[0];
@@ -215,7 +222,11 @@ export function MemberEdit({ member, onComplete, onCancel }) {
                                     {categories.map(c => (
                                         <button
                                             key={c.name}
-                                            onClick={() => setFormData({ ...formData, category: c.name })}
+                                            onClick={() => {
+                                                const nextData = { ...formData, category: c.name };
+                                                if (c.name === 'Group Membership') nextData.duration = 'Monthly';
+                                                setFormData(nextData);
+                                            }}
                                             className={cn(
                                                 "p-6 rounded-[2.5rem] text-left border-4 transition-all group flex flex-col justify-center gap-2",
                                                 formData.category === c.name
@@ -235,7 +246,11 @@ export function MemberEdit({ member, onComplete, onCancel }) {
                                     <label className="text-[10px] font-bold text-text/30 uppercase tracking-[0.4em] ml-2 block">New commitment window</label>
                                     <div className="flex flex-wrap gap-4">
                                         {durations
-                                            .filter(d => formData.category !== 'Student (alu/cmu etc)' || d.name !== 'Weekly')
+                                            .filter(d => {
+                                                if (formData.category === 'Group Membership') return d.name === 'Monthly';
+                                                if (formData.category === 'Student (alu/cmu etc)' || formData.category === 'Normal Membership') return d.name !== 'Weekly';
+                                                return true;
+                                            })
                                             .map(d => (
                                                 <button
                                                     key={d.name}

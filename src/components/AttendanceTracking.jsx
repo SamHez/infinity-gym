@@ -63,12 +63,12 @@ export function AttendanceTracking() {
 
             if (memberError) throw memberError;
 
-            // 2. Log the 3000 RWF payment
+            // 2. Log the 4000 RWF payment
             const { error: paymentError } = await supabase
                 .from('payments')
                 .insert([{
                     member_id: member.id,
-                    amount: 3000,
+                    amount: 4000,
                     payment_method: guestPaymentMethod
                 }]);
 
@@ -267,7 +267,7 @@ export function AttendanceTracking() {
                             <div className="bg-accent/5 border border-accent/20 p-8 rounded-[2.5rem] flex items-center justify-between">
                                 <div>
                                     <p className="text-accent text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Pass Value</p>
-                                    <h4 className="text-3xl font-black text-text tracking-tighter">3,000 <span className="text-xs text-text/20 uppercase tracking-[0.2em]">RWF</span></h4>
+                                    <h4 className="text-3xl font-black text-text tracking-tighter">4,000 <span className="text-xs text-text/20 uppercase tracking-[0.2em]">RWF</span></h4>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-text/20 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Duration</p>
