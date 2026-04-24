@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 export function ExpiryMonitoring() {
     const expires = [
         { name: 'Emmanuel M.', days: 2, status: 'Critical', category: 'Normal', phone: '078...' },
-        { name: 'Divine I.', days: 5, status: 'Warning', category: 'Student', phone: '079...' },
+        { name: 'Divine I.', days: 5, status: 'Warning', category: 'Student (ALU)', phone: '079...' },
         { name: 'John Doe', days: -1, status: 'Expired', category: 'Resident', phone: '072...' },
     ];
 
