@@ -24,6 +24,7 @@ export function MembershipRegistration({ onComplete, onCancel }) {
         { name: 'Group Membership', price: 300000, desc: 'Group of 10 Monthly Membership' },
         { name: 'Student (ALU)', price: 20000, desc: 'ALU Academic Discount' },
         { name: 'Student (CMU)', price: 30000, desc: 'CMU Academic Discount' },
+        { name: 'Infinity Hotel Resident', price: 10000, desc: 'Special Resident Rate' },
         { name: 'Daily Pass', price: 4000, desc: 'Single Entry' },
     ];
 
@@ -57,6 +58,10 @@ export function MembershipRegistration({ onComplete, onCancel }) {
             if (formData.duration === '3 Months') price = 90000;
             else if (formData.duration === '6 Months') price = 180000;
             else if (formData.duration === 'Annual') price = 360000;
+        } else if (formData.category === 'Infinity Hotel Resident') {
+            if (formData.duration === '3 Months') price = 30000;
+            else if (formData.duration === '6 Months') price = 60000;
+            else if (formData.duration === 'Annual') price = 120000;
         } else if (formData.category === 'Group Membership') {
             price = 300000; // Strictly monthly
         }
@@ -245,7 +250,7 @@ export function MembershipRegistration({ onComplete, onCancel }) {
                                     {durations
                                         .filter(d => {
                                             if (formData.category === 'Group Membership') return d.name === 'Monthly';
-                                            if (formData.category === 'Student (ALU)' || formData.category === 'Student (CMU)' || formData.category === 'Normal Membership') return d.name !== 'Weekly';
+                                            if (formData.category === 'Student (ALU)' || formData.category === 'Student (CMU)' || formData.category === 'Normal Membership' || formData.category === 'Infinity Hotel Resident') return d.name !== 'Weekly';
                                             return true;
                                         })
                                         .map(d => (
