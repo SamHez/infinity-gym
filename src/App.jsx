@@ -19,6 +19,7 @@ import { cn } from './lib/utils';
 import { supabase } from './lib/supabase';
 import { useToast } from './context/ToastContext';
 import { useFinanceActions } from './lib/data-hooks';
+import { calculateMembershipExpiryDate, getStoredDuration } from './lib/membership';
 
 function App() {
   const { showToast } = useToast();
@@ -85,18 +86,8 @@ function App() {
       const memberCode = `IG-${branchCode}-${year}-${random}`;
 
       // 2. Calculate Expiry Date
-      let startDate = formData.startDate ? new Date(formData.startDate) : new Date();
-      let expiryDate = new Date(startDate);
-      
-      if (formData.category === 'Daily Pass') {
-          expiryDate.setDate(expiryDate.getDate() + 1);
-      } else {
-          if (formData.duration === 'Weekly') expiryDate.setDate(expiryDate.getDate() + 7);
-          else if (formData.duration === 'Monthly') expiryDate.setMonth(expiryDate.getMonth() + 1);
-          else if (formData.duration === '3 Months') expiryDate.setMonth(expiryDate.getMonth() + 3);
-          else if (formData.duration === '6 Months') expiryDate.setMonth(expiryDate.getMonth() + 6);
-          else if (formData.duration === 'Annual') expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-      }
+      const startDate = formData.startDate ? new Date(formData.startDate) : new Date();
+      const expiryDate = calculateMembershipExpiryDate(formData);
 
       // 3. Create Member
       const { data: member, error: memberError } = await supabase
@@ -107,7 +98,7 @@ function App() {
           full_name: formData.fullName,
           phone: formData.phone || '',
           category: formData.category,
-          duration: formData.category === 'Daily Pass' ? 'Daily' : formData.duration,
+          duration: getStoredDuration(formData),
           picture_url: formData.picture,
           start_date: startDate.toISOString().split('T')[0],
           expiry_date: expiryDate.toISOString().split('T')[0],
@@ -149,17 +140,7 @@ function App() {
       // 1. Calculate New Expiry Date if renewal
       let expiryDate = new Date(editingMember.expiry_date);
       if (isRenewal) {
-        let startDate = formData.startDate ? new Date(formData.startDate) : new Date();
-        expiryDate = new Date(startDate);
-        if (formData.category === 'Daily Pass') {
-            expiryDate.setDate(expiryDate.getDate() + 1);
-        } else {
-            if (formData.duration === 'Weekly') expiryDate.setDate(expiryDate.getDate() + 7);
-            else if (formData.duration === 'Monthly') expiryDate.setMonth(expiryDate.getMonth() + 1);
-            else if (formData.duration === '3 Months') expiryDate.setMonth(expiryDate.getMonth() + 3);
-            else if (formData.duration === '6 Months') expiryDate.setMonth(expiryDate.getMonth() + 6);
-            else if (formData.duration === 'Annual') expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-        }
+        expiryDate = calculateMembershipExpiryDate(formData);
       }
 
       // 2. Update Member
@@ -169,7 +150,7 @@ function App() {
           full_name: formData.fullName,
           phone: formData.phone || '',
           category: formData.category,
-          duration: formData.category === 'Daily Pass' ? 'Daily' : formData.duration,
+          duration: getStoredDuration(formData),
           picture_url: formData.picture,
           start_date: formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : editingMember.start_date,
           expiry_date: isRenewal ? expiryDate.toISOString().split('T')[0] : editingMember.expiry_date,

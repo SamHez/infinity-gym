@@ -1,115 +1,66 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
+import { Check, Shield, Camera, Phone, User as UserIcon, Calendar, ChevronLeft, RefreshCw } from 'lucide-react';
 import { Card } from './Card';
-import { UserPlus, Check, Shield, Camera, Phone, User as UserIcon, MapPin, CreditCard, Calendar, ChevronLeft, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useToast } from '../context/ToastContext';
+import {
+    calculateMembershipExpiryDate,
+    customMonthOptions,
+    defaultDurations,
+    getCustomMonthsSummary,
+    getEditableMembershipFormData,
+    getMembershipPrice,
+    membershipCategories,
+} from '../lib/membership';
 
 export function MemberEdit({ member, onComplete, onCancel }) {
     const { showToast } = useToast();
     const isExpired = member.status === 'Expired';
     const [isRenewalMode, setIsRenewalMode] = useState(isExpired);
-    const [formData, setFormData] = useState({
-        fullName: member.full_name || '',
-        phone: member.phone || '',
-        startDate: new Date().toISOString().split('T')[0],
-        category: member.category || 'Normal Membership',
-        duration: member.duration || 'Monthly',
-        paymentMethod: 'Cash',
-        branchCode: member.branch_code || 'HQ',
-        picture: member.picture_url || null,
-        status: member.status || 'Active'
-    });
-
+    const [formData, setFormData] = useState(() => getEditableMembershipFormData(member));
     const fileInputRef = useRef(null);
 
-    const categories = [
-        { name: 'Normal Membership', price: 50000, desc: 'Comprehensive Gym Access' },
-        { name: 'Group Membership', price: 300000, desc: 'Group of 10 Monthly Membership' },
-        { name: 'Student (ALU)', price: 20000, desc: 'ALU Academic Discount' },
-        { name: 'Student (CMU)', price: 30000, desc: 'CMU Academic Discount' },
-        { name: 'Infinity Hotel Resident', price: 10000, desc: 'Special Resident Rate' },
-        { name: 'Daily Pass', price: 4000, desc: 'Single Entry' },
-    ];
+    const calculatedPrice = getMembershipPrice(formData);
+    const calculatedExpiryDate = calculateMembershipExpiryDate(formData).toISOString().split('T')[0];
 
-    const durations = [
-        { name: 'Weekly', discount: 0 },
-        { name: 'Monthly', discount: 0 },
-        { name: '3 Months', discount: 0 },
-        { name: '6 Months', discount: 0 },
-        { name: 'Annual', discount: 0 },
-    ];
-
-    const branches = [
-        { code: 'HQ', name: 'Main Branch' },
-        { code: 'KN', name: 'Kigali North' },
-        { code: 'KS', name: 'Kigali South' },
-    ];
-
-    const calculatePrice = () => {
-        const base = categories.find(c => c.name === formData.category)?.price || 0;
-        
-        let price = base;
-        if (formData.category === 'Normal Membership') {
-            if (formData.duration === '3 Months') price = 120000;
-            else if (formData.duration === '6 Months') price = 220000;
-            else if (formData.duration === 'Annual') price = 300000;
-        } else if (formData.category === 'Student (ALU)') {
-            if (formData.duration === '3 Months') price = 60000;
-            else if (formData.duration === '6 Months') price = 120000;
-            else if (formData.duration === 'Annual') price = 240000;
-        } else if (formData.category === 'Student (CMU)') {
-            if (formData.duration === '3 Months') price = 90000;
-            else if (formData.duration === '6 Months') price = 180000;
-            else if (formData.duration === 'Annual') price = 360000;
-        } else if (formData.category === 'Infinity Hotel Resident') {
-            if (formData.duration === '3 Months') price = 30000;
-            else if (formData.duration === '6 Months') price = 60000;
-            else if (formData.duration === 'Annual') price = 120000;
-        } else if (formData.category === 'Group Membership') {
-            price = 300000; // Strictly monthly
-        }
-
-        return price;
+    const updateFormData = (updates) => {
+        setFormData((current) => ({ ...current, ...updates }));
     };
 
-    const calculateExpiryDate = () => {
-        let expiry = new Date(formData.startDate || new Date());
-        if (formData.category === 'Daily Pass') {
-            expiry.setDate(expiry.getDate() + 1);
-        } else {
-            if (formData.duration === 'Weekly') expiry.setDate(expiry.getDate() + 7);
-            else if (formData.duration === 'Monthly') expiry.setMonth(expiry.getMonth() + 1);
-            else if (formData.duration === '3 Months') expiry.setMonth(expiry.getMonth() + 3);
-            else if (formData.duration === '6 Months') expiry.setMonth(expiry.getMonth() + 6);
-            else if (formData.duration === 'Annual') expiry.setFullYear(expiry.getFullYear() + 1);
-        }
-        return expiry.toISOString().split('T')[0];
+    const handleCategoryChange = (category) => {
+        updateFormData({
+            category,
+            duration: 'Monthly',
+            customMonths: 2,
+            dailyPassDays: 1,
+        });
     };
 
-    const handlePictureChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData({ ...formData, picture: reader.result });
-            };
-            reader.readAsDataURL(file);
+    const handlePictureChange = (event) => {
+        const file = event.target.files[0];
+
+        if (!file) {
+            return;
         }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            updateFormData({ picture: reader.result });
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleSubmit = () => {
         if (!formData.fullName || !formData.startDate) {
-            showToast("Please fill in all required fields.", "error");
+            showToast('Please fill in all required fields.', 'error');
             return;
         }
 
-        const price = isRenewalMode ? calculatePrice() : 0;
-        onComplete?.(formData, price, isRenewalMode);
+        onComplete?.(formData, isRenewalMode ? calculatedPrice : 0, isRenewalMode);
     };
 
     return (
         <div className="space-y-10 max-w-5xl mx-auto pb-20">
-            {/* Header with Back Button */}
             <div className="flex flex-col gap-6 mb-8">
                 <button
                     onClick={onCancel}
@@ -134,7 +85,6 @@ export function MemberEdit({ member, onComplete, onCancel }) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Identity & Picture */}
                 <div className="lg:col-span-2 space-y-8">
                     <Card title="Personnel Identity" subtitle="Update Mode" className="p-8 md:p-10 space-y-8">
                         {!isRenewalMode && (
@@ -181,7 +131,7 @@ export function MemberEdit({ member, onComplete, onCancel }) {
                                         type="text"
                                         className="glass-input w-full py-5 px-8 rounded-[2rem] font-bold text-lg"
                                         value={formData.fullName}
-                                        onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                                        onChange={(event) => updateFormData({ fullName: event.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-3">
@@ -192,7 +142,7 @@ export function MemberEdit({ member, onComplete, onCancel }) {
                                         type="tel"
                                         className="glass-input w-full py-5 px-8 rounded-[2rem] font-bold text-lg tabular-nums"
                                         value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                        onChange={(event) => updateFormData({ phone: event.target.value })}
                                     />
                                 </div>
                             </div>
@@ -207,7 +157,7 @@ export function MemberEdit({ member, onComplete, onCancel }) {
                                     type="date"
                                     className="glass-input w-full py-5 px-8 rounded-[2rem] font-bold text-lg uppercase"
                                     value={formData.startDate}
-                                    onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                                    onChange={(event) => updateFormData({ startDate: event.target.value })}
                                 />
                             </div>
                             <div className="space-y-3">
@@ -218,7 +168,7 @@ export function MemberEdit({ member, onComplete, onCancel }) {
                                     type="text"
                                     readOnly
                                     className="glass-input w-full py-5 px-8 rounded-[2rem] font-bold text-lg uppercase text-text/50 bg-black/5"
-                                    value={calculateExpiryDate()}
+                                    value={calculatedExpiryDate}
                                 />
                             </div>
                         </div>
@@ -227,71 +177,124 @@ export function MemberEdit({ member, onComplete, onCancel }) {
                     {isRenewalMode && (
                         <Card title="New Subscription Period" subtitle="Renewal Logic" className="p-8 md:p-10 space-y-8 animate-in slide-in-from-bottom duration-500">
                             <div className="space-y-6">
-                                <label className="text-[10px] font-bold text-text/30 uppercase tracking-[0.4em] ml-2 ">Tier Selection</label>
+                                <label className="text-[10px] font-bold text-text/30 uppercase tracking-[0.4em] ml-2">Tier Selection</label>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    {categories.map(c => (
+                                    {membershipCategories.map((category) => (
                                         <button
-                                            key={c.name}
-                                            onClick={() => {
-                                                const nextData = { ...formData, category: c.name };
-                                                if (c.name === 'Group Membership') nextData.duration = 'Monthly';
-                                                setFormData(nextData);
-                                            }}
+                                            key={category.name}
+                                            onClick={() => handleCategoryChange(category.name)}
                                             className={cn(
                                                 "p-6 rounded-[2.5rem] text-left border-4 transition-all group flex flex-col justify-center gap-2",
-                                                formData.category === c.name
+                                                formData.category === category.name
                                                     ? "border-primary bg-primary/5 shadow-premium"
                                                     : "border-text/5 bg-surface hover:border-text/10"
                                             )}
                                         >
-                                            <p className={cn("text-lg font-bold leading-none mb-1", formData.category === c.name ? "text-primary" : "text-text")}>{c.name}</p>
-                                            <p className="text-[9px] font-bold text-text/20 uppercase tracking-tighter leading-none">{c.desc}</p>
+                                            <p className={cn("text-lg font-bold leading-none mb-1", formData.category === category.name ? "text-primary" : "text-text")}>
+                                                {category.name}
+                                            </p>
+                                            <p className="text-[9px] font-bold text-text/20 uppercase tracking-tighter leading-none">{category.desc}</p>
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {formData.category !== 'Daily Pass' && (
+                            {formData.category !== 'Daily Pass' ? (
                                 <div className="space-y-6">
                                     <label className="text-[10px] font-bold text-text/30 uppercase tracking-[0.4em] ml-2 block">New commitment window</label>
                                     <div className="flex flex-wrap gap-4">
-                                        {durations
-                                            .filter(d => {
-                                                if (formData.category === 'Group Membership') return d.name === 'Monthly';
-                                                if (formData.category === 'Student (ALU)' || formData.category === 'Student (CMU)' || formData.category === 'Normal Membership' || formData.category === 'Infinity Hotel Resident') return d.name !== 'Weekly';
-                                                return true;
-                                            })
-                                            .map(d => (
-                                                <button
-                                                    key={d.name}
-                                                    onClick={() => setFormData({ ...formData, duration: d.name })}
-                                                    className={cn(
-                                                        "px-8 py-4 rounded-2xl text-[10px] font-bold transition-all uppercase tracking-[0.2em]",
-                                                        formData.duration === d.name
-                                                            ? "bg-primary text-white shadow-premium"
-                                                            : "bg-surface border-2 border-text/5 text-text/30 hover:text-text/60"
-                                                    )}
-                                                >
-                                                    {d.name} {d.discount > 0 && <span className="ml-2 text-[9px] text-accent">-{d.discount}%</span>}
-                                                </button>
-                                            ))}
+                                        {defaultDurations.map((duration) => (
+                                            <button
+                                                key={duration.name}
+                                                onClick={() => updateFormData({ duration: duration.name })}
+                                                className={cn(
+                                                    "px-8 py-4 rounded-2xl text-[10px] font-bold transition-all uppercase tracking-[0.2em]",
+                                                    formData.duration === duration.name
+                                                        ? "bg-primary text-white shadow-premium"
+                                                        : "bg-surface border-2 border-text/5 text-text/30 hover:text-text/60"
+                                                )}
+                                            >
+                                                {duration.name}
+                                            </button>
+                                        ))}
                                     </div>
-
+                                    <div className="rounded-[2rem] border border-text/5 bg-surface p-6 space-y-4">
+                                        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-text/30">Custom Commitment Window</p>
+                                                <p className="text-sm font-bold text-text">Choose any renewal period from 2 to 12 months.</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => updateFormData({ duration: 'Custom Months' })}
+                                                className={cn(
+                                                    "px-6 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] transition-all",
+                                                    formData.duration === 'Custom Months'
+                                                        ? "bg-primary text-white shadow-premium"
+                                                        : "bg-card border border-text/10 text-text/40 hover:text-text"
+                                                )}
+                                            >
+                                                Use Custom
+                                            </button>
+                                        </div>
+                                        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                                            <select
+                                                value={formData.customMonths}
+                                                onChange={(event) => updateFormData({
+                                                    duration: 'Custom Months',
+                                                    customMonths: Number.parseInt(event.target.value, 10),
+                                                })}
+                                                className="glass-input w-full md:w-64 py-4 px-6 rounded-[1.5rem] font-bold text-sm uppercase"
+                                            >
+                                                {customMonthOptions.map((months) => (
+                                                    <option key={months} value={months}>
+                                                        {months} Months
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text/30">
+                                                {formData.duration === 'Custom Months'
+                                                    ? `${getCustomMonthsSummary(formData.customMonths)} selected at monthly rate`
+                                                    : 'Preset package pricing remains available above'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    <label className="text-[10px] font-bold text-text/30 uppercase tracking-[0.4em] ml-2 block">Daily Pass Window</label>
+                                    <div className="rounded-[2rem] border border-text/5 bg-surface p-6 space-y-4">
+                                        <p className="text-sm font-bold text-text">Set how many days the daily pass should stay active.</p>
+                                        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="365"
+                                                value={formData.dailyPassDays}
+                                                onChange={(event) => updateFormData({
+                                                    dailyPassDays: Math.max(1, Number.parseInt(event.target.value || '1', 10)),
+                                                })}
+                                                className="glass-input w-full md:w-64 py-4 px-6 rounded-[1.5rem] font-bold text-sm uppercase"
+                                            />
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text/30">
+                                                Payment and expiry update automatically for the selected number of days.
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </Card>
                     )}
                 </div>
 
-                {/* Right Column: Checkout or Save */}
                 <div className="space-y-8">
-                    <Card title={isRenewalMode ? "Renewal Summary" : "System Update"} subtitle="Action" className="p-8 space-y-8 sticky top-32">
+                    <Card title={isRenewalMode ? 'Renewal Summary' : 'System Update'} subtitle="Action" className="p-8 space-y-8 sticky top-32">
                         {isRenewalMode ? (
                             <div className="bg-surface border border-text/5 p-8 rounded-[2.5rem] relative overflow-hidden group shadow-inner text-center">
                                 <p className="text-text font-bold text-xl tracking-tighter mb-2 uppercase leading-none">{formData.fullName}</p>
                                 <p className="text-primary text-[11px] font-bold uppercase tracking-[0.5em] mb-6">{formData.category}</p>
                                 <div className="h-[2px] w-full bg-text/5 mb-6" />
-                                <p className="text-text font-bold text-5xl tracking-tighter tabular-nums leading-none">{calculatePrice().toLocaleString()}</p>
+                                <p className="text-text font-bold text-5xl tracking-tighter tabular-nums leading-none">{calculatedPrice.toLocaleString()}</p>
                                 <p className="text-text/20 text-[10px] font-bold uppercase tracking-[0.5em] mt-3">TOTAL RWF</p>
                             </div>
                         ) : (
@@ -304,24 +307,26 @@ export function MemberEdit({ member, onComplete, onCancel }) {
                         {isRenewalMode && (
                             <div className="space-y-4">
                                 <label className="text-[11px] font-bold text-text/30 uppercase tracking-[0.4em] ml-2 block">Payment Logic</label>
-                                {['Cash', 'Mobile Money'].map(m => (
+                                {['Cash', 'Mobile Money'].map((paymentMethod) => (
                                     <button
-                                        key={m}
-                                        onClick={() => setFormData({ ...formData, paymentMethod: m })}
+                                        key={paymentMethod}
+                                        onClick={() => updateFormData({ paymentMethod })}
                                         className={cn(
                                             "w-full p-6 rounded-3xl flex items-center gap-6 border-4 transition-all",
-                                            formData.paymentMethod === m
+                                            formData.paymentMethod === paymentMethod
                                                 ? "border-primary bg-primary/5 shadow-premium"
                                                 : "border-text/5 bg-surface"
                                         )}
                                     >
                                         <div className={cn(
                                             "w-6 h-6 rounded-full border-4 flex items-center justify-center transition-all",
-                                            formData.paymentMethod === m ? "border-primary" : "border-text/10"
+                                            formData.paymentMethod === paymentMethod ? "border-primary" : "border-text/10"
                                         )}>
-                                            {formData.paymentMethod === m && <div className="w-3 h-3 bg-primary rounded-full shadow-[0_0_15px_rgba(30,136,229,0.4)]" />}
+                                            {formData.paymentMethod === paymentMethod && <div className="w-3 h-3 bg-primary rounded-full shadow-[0_0_15px_rgba(30,136,229,0.4)]" />}
                                         </div>
-                                        <span className={cn("text-[11px] font-bold uppercase tracking-[0.2em]", formData.paymentMethod === m ? "text-text" : "text-text/20")}>{m}</span>
+                                        <span className={cn("text-[11px] font-bold uppercase tracking-[0.2em]", formData.paymentMethod === paymentMethod ? "text-text" : "text-text/20")}>
+                                            {paymentMethod}
+                                        </span>
                                     </button>
                                 ))}
                             </div>

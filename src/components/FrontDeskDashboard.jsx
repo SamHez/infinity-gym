@@ -294,80 +294,104 @@ export function FrontDeskDashboard({ onNavigate }) {
                 ))}
             </div>            {/* Main Action Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10">
-                {/* Attendance Trends Chart */}
-                <Card
-                    title="Attendance Trends"
-                    subtitle={attendanceRange === '7d' ? "Past 7 Days" : "Past 30 Days"}
-                    extra={
-                        <div className="flex bg-text/5 p-1 rounded-xl">
-                            {['7d', '1m'].map((r) => (
+
+                <Card title="Revenue Trend" subtitle="Growth Intelligence">
+                    <div className="flex items-center justify-end -mt-10 mb-4 relative z-20">
+                        <div className="flex items-center gap-1 p-1 bg-text/5 rounded-xl">
+                            {['7d', '1m', '3m', '6m', '1y'].map((range) => (
                                 <button
-                                    key={r}
-                                    onClick={() => setAttendanceRange(r)}
+                                    key={range}
+                                    onClick={() => setRevenueRange(range)}
                                     className={cn(
-                                        "px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all",
-                                        attendanceRange === r ? "bg-accent text-surface shadow-sm" : "text-text/40 hover:text-text"
+                                        "px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all",
+                                        revenueRange === range ? "bg-primary text-surface shadow-md shadow-primary/20" : "text-text/40 hover:text-text/60"
                                     )}
                                 >
-                                    {r}
+                                    {range}
                                 </button>
                             ))}
                         </div>
-                    }
-                >
-                    <div className="h-48 w-full mt-4 flex items-end justify-between relative px-2">
-                        {(() => {
-                            const data = historicalData?.daily || new Array(7).fill({ label: '-', count: 0 });
-                            const maxVal = Math.max(...data.map(d => d.count), 5);
-                            const ticks = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal];
-
-                            return (
-                                <>
-                                    {/* Y-Axis & Grid Lines */}
-                                    <div className="absolute inset-0 flex flex-col justify-between py-1 pointer-events-none pr-2">
-                                        {ticks.reverse().map((tick, i) => (
-                                            <div key={i} className="flex items-center gap-2 w-full">
-                                                <span className="text-[7px] font-black text-text/30 w-4 text-right tabular-nums">{Math.round(tick)}</span>
-                                                <div className="flex-1 border-b border-text/[0.05]" />
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Bars */}
-                                    <div className="flex-1 h-full flex items-end justify-between gap-2 relative z-10 px-6">
-                                        {data.map((item, i) => (
-                                            <div key={i} className="flex-1 flex flex-col items-center gap-3 h-full justify-end group/bar">
-                                                <div
-                                                    className={cn(
-                                                        "w-full rounded-t-xl transition-all duration-[1000ms] relative min-h-[2px]",
-                                                        "bg-gradient-to-t from-secondary/40 to-accent shadow-lg shadow-accent/5 hover:scale-x-110"
-                                                    )}
-                                                    style={{ height: `${(item.count / maxVal) * 100}%` }}
-                                                >
-                                                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-surface text-text border border-text/10 text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-sm opacity-0 group-hover/bar:opacity-100 transition-opacity z-20">
-                                                        {item.count}
-                                                    </div>
-                                                </div>
-                                                <span className={cn(
-                                                    "text-[8px] font-bold uppercase tracking-tighter truncate w-full text-center",
-                                                    i === data.length - 1 ? "text-accent" : "text-text/30"
-                                                )}>
-                                                    {item.label.split(',')[0]}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </>
-                            );
-                        })()}
                     </div>
-                    {historicalData?.peakHour && (
-                        <div className="mt-8 pt-4 border-t border-text/5 flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-text/30 uppercase tracking-[0.2em]">Busiest Time Block</span>
-                            <span className="text-[10px] font-black text-accent uppercase tracking-widest">{historicalData.peakHour} Window</span>
-                        </div>
-                    )}
+
+                    <div className="h-72 w-full pr-4 relative">
+                        {revenueTrendData.length > 1 ? (
+                            <svg viewBox="0 0 400 200" className="w-full h-full overflow-visible">
+                                <defs>
+                                    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.15" />
+                                        <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
+                                    </linearGradient>
+                                </defs>
+                                {(() => {
+                                    const rawMax = Math.max(...revenueTrendData.map(d => d.revenue), 0);
+                                    const maxVal = Math.max(rawMax * 1.1, 1000); // Tight 10% buffer
+                                    const ticks = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal];
+
+                                    const points = revenueTrendData.map((d, i) => ({
+                                        x: (i / (revenueTrendData.length - 1)) * 360 + 40,
+                                        y: 200 - ((d.revenue / maxVal) * 180) - 10
+                                    }));
+                                    const pathStr = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
+                                    const areaStr = `${pathStr} L ${points[points.length - 1].x},200 L 40,200 Z`;
+
+                                    return (
+                                        <>
+                                            {/* Y-Axis Grid Lines & Labels */}
+                                            {ticks.map((tick, i) => {
+                                                const yPos = 200 - ((tick / maxVal) * 180) - 10;
+                                                return (
+                                                    <g key={i}>
+                                                        <line x1="40" y1={yPos} x2="400" y2={yPos} stroke="currentColor" className="text-text/[0.08]" strokeDasharray="4 4" />
+                                                        <text x="35" y={yPos + 3} textAnchor="end" className="fill-text/40 text-[9px] font-bold tabular-nums italic">
+                                                            {tick >= 1000 ? `${Math.round(tick / 1000)}k` : Math.round(tick)}
+                                                        </text>
+                                                    </g>
+                                                );
+                                            })}
+
+                                            <path d={areaStr} fill="url(#lineGrad)" className="transition-all duration-1000" />
+                                            <path d={pathStr} fill="none" stroke="currentColor" strokeWidth="3" className="text-primary transition-all duration-1000" strokeLinecap="round" strokeLinejoin="round" />
+
+                                            {/* X-Axis labels */}
+                                            {points.map((p, i) => {
+                                                const skip = Math.max(1, Math.floor(revenueTrendData.length / 8));
+                                                if (i % skip !== 0 && i !== points.length - 1) return null;
+
+                                                let label = "";
+                                                if (revenueRange === '7d' || revenueRange === '1m') {
+                                                    label = revenueTrendData[i].date?.split('-')[2] || "";
+                                                } else {
+                                                    label = revenueTrendData[i].month?.toUpperCase() || "";
+                                                }
+
+                                                return (
+                                                    <text key={`label-${i}`} x={p.x} y={195} textAnchor="middle" className="fill-text/40 text-[9px] font-bold uppercase tracking-widest">
+                                                        {label}
+                                                    </text>
+                                                );
+                                            })}
+
+                                            {/* Hover dots or markers */}
+                                            {points.map((p, i) => (
+                                                <g key={`point-${i}`} className="group/dot">
+                                                    <circle cx={p.x} cy={p.y} r="4" className="text-primary fill-surface stroke-current stroke-3 opacity-0 group-hover/dot:opacity-100 transition-opacity" />
+                                                    <text x={p.x} y={p.y - 12} textAnchor="middle" className="fill-text text-[10px] font-black tracking-tighter opacity-0 group-hover/dot:opacity-100 transition-opacity pointer-events-none drop-shadow-sm">
+                                                        {revenueTrendData[i].revenue.toLocaleString()}
+                                                    </text>
+                                                </g>
+                                            ))}
+                                        </>
+                                    );
+                                })()}
+                            </svg>
+                        ) : (
+                            <div className="h-full flex items-center justify-center text-text/20 text-[10px] font-bold uppercase tracking-widest">
+                                Insufficient data for trend
+                            </div>
+                        )}
+                    </div>
                 </Card>
+                
 
                 {/* Latest Transactions */}
                 <Card title="Transactions">
@@ -484,102 +508,82 @@ export function FrontDeskDashboard({ onNavigate }) {
                     </div>
                 </Card>
 
-                <Card title="Revenue Trend" subtitle="Growth Intelligence">
-                    <div className="flex items-center justify-end -mt-10 mb-4 relative z-20">
-                        <div className="flex items-center gap-1 p-1 bg-text/5 rounded-xl">
-                            {['7d', '1m', '3m', '6m', '1y'].map((range) => (
+                {/* Attendance Trends Chart */}
+                <Card
+                    title="Attendance Trends"
+                    subtitle={attendanceRange === '7d' ? "Past 7 Days" : "Past 30 Days"}
+                    extra={
+                        <div className="flex bg-text/5 p-1 rounded-xl">
+                            {['7d', '1m'].map((r) => (
                                 <button
-                                    key={range}
-                                    onClick={() => setRevenueRange(range)}
+                                    key={r}
+                                    onClick={() => setAttendanceRange(r)}
                                     className={cn(
-                                        "px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all",
-                                        revenueRange === range ? "bg-primary text-surface shadow-md shadow-primary/20" : "text-text/40 hover:text-text/60"
+                                        "px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all",
+                                        attendanceRange === r ? "bg-accent text-surface shadow-sm" : "text-text/40 hover:text-text"
                                     )}
                                 >
-                                    {range}
+                                    {r}
                                 </button>
                             ))}
                         </div>
+                    }
+                >
+                    <div className="h-48 w-full mt-4 flex items-end justify-between relative px-2">
+                        {(() => {
+                            const data = historicalData?.daily || new Array(7).fill({ label: '-', count: 0 });
+                            const maxVal = Math.max(...data.map(d => d.count), 5);
+                            const ticks = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal];
+
+                            return (
+                                <>
+                                    {/* Y-Axis & Grid Lines */}
+                                    <div className="absolute inset-0 flex flex-col justify-between py-1 pointer-events-none pr-2">
+                                        {ticks.reverse().map((tick, i) => (
+                                            <div key={i} className="flex items-center gap-2 w-full">
+                                                <span className="text-[7px] font-black text-text/30 w-4 text-right tabular-nums">{Math.round(tick)}</span>
+                                                <div className="flex-1 border-b border-text/[0.05]" />
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Bars */}
+                                    <div className="flex-1 h-full flex items-end justify-between gap-2 relative z-10 px-6">
+                                        {data.map((item, i) => (
+                                            <div key={i} className="flex-1 flex flex-col items-center gap-3 h-full justify-end group/bar">
+                                                <div
+                                                    className={cn(
+                                                        "w-full rounded-t-xl transition-all duration-[1000ms] relative min-h-[2px]",
+                                                        "bg-gradient-to-t from-secondary/40 to-accent shadow-lg shadow-accent/5 hover:scale-x-110"
+                                                    )}
+                                                    style={{ height: `${(item.count / maxVal) * 100}%` }}
+                                                >
+                                                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-surface text-text border border-text/10 text-[8px] font-black px-1.5 py-0.5 rounded-md shadow-sm opacity-0 group-hover/bar:opacity-100 transition-opacity z-20">
+                                                        {item.count}
+                                                    </div>
+                                                </div>
+                                                <span className={cn(
+                                                    "text-[8px] font-bold uppercase tracking-tighter truncate w-full text-center",
+                                                    i === data.length - 1 ? "text-accent" : "text-text/30"
+                                                )}>
+                                                    {item.label.split(',')[0]}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
-
-                    <div className="h-72 w-full pr-4 relative">
-                        {revenueTrendData.length > 1 ? (
-                            <svg viewBox="0 0 400 200" className="w-full h-full overflow-visible">
-                                <defs>
-                                    <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.15" />
-                                        <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
-                                    </linearGradient>
-                                </defs>
-                                {(() => {
-                                    const rawMax = Math.max(...revenueTrendData.map(d => d.revenue), 0);
-                                    const maxVal = Math.max(rawMax * 1.1, 1000); // Tight 10% buffer
-                                    const ticks = [0, maxVal * 0.25, maxVal * 0.5, maxVal * 0.75, maxVal];
-
-                                    const points = revenueTrendData.map((d, i) => ({
-                                        x: (i / (revenueTrendData.length - 1)) * 360 + 40,
-                                        y: 200 - ((d.revenue / maxVal) * 180) - 10
-                                    }));
-                                    const pathStr = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
-                                    const areaStr = `${pathStr} L ${points[points.length - 1].x},200 L 40,200 Z`;
-
-                                    return (
-                                        <>
-                                            {/* Y-Axis Grid Lines & Labels */}
-                                            {ticks.map((tick, i) => {
-                                                const yPos = 200 - ((tick / maxVal) * 180) - 10;
-                                                return (
-                                                    <g key={i}>
-                                                        <line x1="40" y1={yPos} x2="400" y2={yPos} stroke="currentColor" className="text-text/[0.08]" strokeDasharray="4 4" />
-                                                        <text x="35" y={yPos + 3} textAnchor="end" className="fill-text/40 text-[9px] font-bold tabular-nums italic">
-                                                            {tick >= 1000 ? `${Math.round(tick / 1000)}k` : Math.round(tick)}
-                                                        </text>
-                                                    </g>
-                                                );
-                                            })}
-
-                                            <path d={areaStr} fill="url(#lineGrad)" className="transition-all duration-1000" />
-                                            <path d={pathStr} fill="none" stroke="currentColor" strokeWidth="3" className="text-primary transition-all duration-1000" strokeLinecap="round" strokeLinejoin="round" />
-
-                                            {/* X-Axis labels */}
-                                            {points.map((p, i) => {
-                                                const skip = Math.max(1, Math.floor(revenueTrendData.length / 8));
-                                                if (i % skip !== 0 && i !== points.length - 1) return null;
-
-                                                let label = "";
-                                                if (revenueRange === '7d' || revenueRange === '1m') {
-                                                    label = revenueTrendData[i].date?.split('-')[2] || "";
-                                                } else {
-                                                    label = revenueTrendData[i].month?.toUpperCase() || "";
-                                                }
-
-                                                return (
-                                                    <text key={`label-${i}`} x={p.x} y={195} textAnchor="middle" className="fill-text/40 text-[9px] font-bold uppercase tracking-widest">
-                                                        {label}
-                                                    </text>
-                                                );
-                                            })}
-
-                                            {/* Hover dots or markers */}
-                                            {points.map((p, i) => (
-                                                <g key={`point-${i}`} className="group/dot">
-                                                    <circle cx={p.x} cy={p.y} r="4" className="text-primary fill-surface stroke-current stroke-3 opacity-0 group-hover/dot:opacity-100 transition-opacity" />
-                                                    <text x={p.x} y={p.y - 12} textAnchor="middle" className="fill-text text-[10px] font-black tracking-tighter opacity-0 group-hover/dot:opacity-100 transition-opacity pointer-events-none drop-shadow-sm">
-                                                        {revenueTrendData[i].revenue.toLocaleString()}
-                                                    </text>
-                                                </g>
-                                            ))}
-                                        </>
-                                    );
-                                })()}
-                            </svg>
-                        ) : (
-                            <div className="h-full flex items-center justify-center text-text/20 text-[10px] font-bold uppercase tracking-widest">
-                                Insufficient data for trend
-                            </div>
-                        )}
-                    </div>
+                    {historicalData?.peakHour && (
+                        <div className="mt-8 pt-4 border-t border-text/5 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-text/30 uppercase tracking-[0.2em]">Busiest Time Block</span>
+                            <span className="text-[10px] font-black text-accent uppercase tracking-widest">{historicalData.peakHour} Window</span>
+                        </div>
+                    )}
                 </Card>
+
+                
             </div>
         </div>
     );
